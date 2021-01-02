@@ -1,7 +1,19 @@
 const express = require('express')
+const morgan = require('morgan')
+
 const app = express()
 
 app.use(express.json())
+
+morgan.token('person', (req, res) => JSON.stringify(req.body))
+
+app.use(morgan('tiny', {
+    skip: (req, res) => res.statusCode === 201
+}))
+
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :person', {
+    skip: (req, res) => res.statusCode !== 201
+}))
 
 let persons = [
     {
@@ -32,11 +44,10 @@ app.get('/api/persons', (req, res) => {
 
 app.get('/info', (req, res) => {
 
-    console.log(new Date())
+    console.log(new Date().toString())
 
-    /* res.send(`<p>Phonebook has info for ${persons.length} people</p>`) */
-
-    res.send(new Date())
+    res.send(`<p>Phonebook has info for ${persons.length} people</p>
+              <p>${new Date().toString()}</p>`)
 })
 
 app.get('/api/persons/:id', (req, res) => {
@@ -50,7 +61,7 @@ app.get('/api/persons/:id', (req, res) => {
     }
 })
 
-app.delete('/api/person/:id', (req, res) => {
+app.delete('/api/persons/:id', (req, res) => {
     const id = Number(req.params.id)
     persons = persons.filter(person => person.id !== id)
 
@@ -58,31 +69,35 @@ app.delete('/api/person/:id', (req, res) => {
 })
 
 const generateId = () => {
-    const maxId = persons.length > 0
-        ? Math.max(...persons.map(person => person.id))
-        : 0
-    return maxId + 1
+    const id = Math.floor(Math.random() * 1000000)
+
+    return id
 }
 
 app.post('/api/persons', (req, res) => {
     const body = req.body
 
-    if (!body.content) {
+    if (!body.name || !body.number) {
         return res.status(400).json({
-            error: 'content missing'
+            error: 'missing information'
+        })
+    }
+
+    if (persons.some(person => person.name === body.name)) {
+        return res.status(400).json({
+            error: 'name must be unique'
         })
     }
 
     const person = {
-        name: body.name,
-        number: body.number,
-        date: new Date(),
         id: generateId(),
+        name: body.name,
+        number: body.number
     }
 
     persons = persons.concat(person)
 
-    res.json(person)
+    res.status(201).json(person)
 })
 
 const PORT = 3001
