@@ -6,6 +6,7 @@ const app = express()
 
 app.use(express.json())
 app.use(cors())
+app.use(express.static('build'))
 
 morgan.token('person', (req, res) => JSON.stringify(req.body))
 
@@ -45,8 +46,6 @@ app.get('/api/persons', (req, res) => {
 })
 
 app.get('/info', (req, res) => {
-
-    console.log(new Date().toString())
 
     res.send(`<p>Phonebook has info for ${persons.length} people</p>
               <p>${new Date().toString()}</p>`)
