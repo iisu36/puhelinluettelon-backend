@@ -28,19 +28,12 @@ app.get('/api/persons', (req, res) => {
     })
 })
 
-const getDocumentCount = () => {
-    
-    Person.countDocuments({}, (err, result) => {
-        console.log(result.toString())
+app.get('/info', async (req, res) => {
 
-        return result
-    })
-}
+    const count = await Person.count()
 
-app.get('/info', (req, res) => {
-
-    res.send(`<p>Phonebook has info for ${getDocumentCount()} people</p>
-              <p>${new Date().toString()}</p>`)
+    res.send(`<p>Phonebook has info for ${count} people</p>
+              <p>${new Date()}</p>`)
 })
 
 app.get('/api/persons/:id', (req, res, next) => {
@@ -66,7 +59,7 @@ app.delete('/api/persons/:id', (req, res, next) => {
         .catch(error => next(error))
 })
 
-app.post('/api/persons', (req, res) => {
+app.post('/api/persons', (req, res, next) => {
     const body = req.body
 
     if (!body.name || !body.number) {
@@ -80,9 +73,11 @@ app.post('/api/persons', (req, res) => {
         number: body.number
     })
 
-    person.save().then(savedPerson => {
-        res.status(201).json(savedPerson)
-    })
+    person.save()
+        .then(savedPerson => {
+            res.status(201).json(savedPerson.toJSON())
+        })
+        .catch(error => next(error))
 })
 
 app.put('/api/persons/:id', (req, res, next) => {
@@ -106,6 +101,8 @@ const errorHandler = (err, req, res, next) => {
 
     if (err.name === 'CastError') {
         return res.status(400).send({ error: 'malformatted id' })
+    } else if (err.name === 'ValidationError') {
+        return response.status(400).json(err.message)
     }
 
     next(err)
