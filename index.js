@@ -4,7 +4,7 @@ const morgan = require('morgan')
 const cors = require('cors')
 
 const Person = require('./models/person')
-const { response } = require('express')
+require('express')
 
 const app = express()
 
@@ -12,7 +12,7 @@ app.use(express.static('build'))
 app.use(express.json())
 app.use(cors())
 
-morgan.token('person', (req, res) => JSON.stringify(req.body))
+morgan.token('person', (req) => JSON.stringify(req.body))
 
 app.use(morgan('tiny', {
     skip: (req, res) => res.statusCode === 201
@@ -53,7 +53,7 @@ app.get('/api/persons/:id', (req, res, next) => {
 app.delete('/api/persons/:id', (req, res, next) => {
 
     Person.findByIdAndRemove(req.params.id)
-        .then(result => {
+        .then( () => {
             res.status(204).end()
         })
         .catch(error => next(error))
@@ -61,12 +61,6 @@ app.delete('/api/persons/:id', (req, res, next) => {
 
 app.post('/api/persons', (req, res, next) => {
     const body = req.body
-
-    if (!body.name || !body.number) {
-        return res.status(400).json({
-            error: 'missing information'
-        })
-    }
 
     const person = new Person({
         name: body.name,
@@ -97,12 +91,11 @@ app.put('/api/persons/:id', (req, res, next) => {
 })
 
 const errorHandler = (err, req, res, next) => {
-    console.error(err.message)
 
     if (err.name === 'CastError') {
         return res.status(400).send({ error: 'malformatted id' })
     } else if (err.name === 'ValidationError') {
-        return response.status(400).json(err.message)
+        return res.status(400).send({ error: err.message })
     }
 
     next(err)
