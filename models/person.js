@@ -5,7 +5,7 @@ const url = process.env.MONGODB_URI
 
 console.log('connecting to', url)
 
-mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false, useCreateIndex: true })
+mongoose.connect(url)
     .then(() => {
         console.log('connected to MongoDB')
     })
@@ -22,6 +22,12 @@ const personSchema = new mongoose.Schema({
     },
     number: {
         type: String,
+        validate: {
+            validator: v => {
+                return /\d{3}-\d{5,}/.test(v) || /\d{2}-\d{6,}/.test(v)
+            },
+            message: props => '${props.value} is not a valid phone number!'
+        },
         minlength: 8,
         required: true
     }
